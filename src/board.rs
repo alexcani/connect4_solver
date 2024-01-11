@@ -1,11 +1,9 @@
-
-
 use std::fmt::Display;
 
 use strum_macros::EnumIter;
 
-const WIDTH: usize = 7;
-const HEIGHT: usize = 6;
+pub const WIDTH: usize = 7;
+pub const HEIGHT: usize = 6;
 
 #[derive(Copy, Clone, PartialEq, Debug, Default)]
 pub enum Slot {
@@ -40,7 +38,7 @@ impl From<char> for Column {
     }
 }
 
-#[derive(Clone, Debug, Default)]
+#[derive(Copy, Clone, Debug, Default)]
 pub struct Board {
     slots: [[Slot; WIDTH]; HEIGHT],
     height: [usize; WIDTH],  // Number of pieces in each column
@@ -61,7 +59,8 @@ impl Board {
     ///
     /// Example:
     /// ```
-    /// let board = Board::new_from_notation("32164625");
+    /// # use connect4_solver::board::*;
+    /// let board = Board::from_notation("32164625");
     /// ```
     /// This will create a board with the following layout (X is P1, O is P2)
     /// ```text
