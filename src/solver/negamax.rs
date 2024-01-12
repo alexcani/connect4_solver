@@ -3,7 +3,7 @@ use crate::board::*;
 use strum::IntoEnumIterator;
 
 // Naive implementation of negamax without any optimizations
-pub fn solve(position: &Board, nodes_searched: &mut usize) -> i32 {
+pub fn solve(position: &impl Board, nodes_searched: &mut usize) -> i32 {
     *nodes_searched += 1;
 
     // Stop conditions

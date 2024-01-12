@@ -13,9 +13,11 @@ fn read_lines(filename: &str) -> Vec<String> {
 // Run a benchmark with input from a file. Each line in a file contains the sequence of moves
 // and the expected score the engine should evaluate to
 // Outputs the average time taken to solve position, avg number of nodes searched, and avg node search rate.
-fn benchmark<F>(file: &str, solver: F, per_case_output: bool)
+fn benchmark<C, S, B>(file: &str, board_creator: C, solver: S, per_case_output: bool)
 where
-    F: Fn(&Board) -> SolveResult,
+    C: Fn(&str) -> B,
+    B: Board,
+    S: Fn(&B) -> SolveResult,
 {
     println!("Running benchmark: {}", file);
     let mut times = Vec::new();
@@ -27,7 +29,7 @@ where
         let mut splits = line.split(' ');
         let moves = splits.next().unwrap();
         let expected_score = splits.next().unwrap().parse::<i32>().unwrap();
-        let board = Board::from_notation(moves);
+        let board = board_creator(moves);
 
         let now = std::time::Instant::now();
         let result = solver(&board);
@@ -76,14 +78,14 @@ where
 }
 
 fn main() {
-    println!("NEGAMAX - NAIVE");
-    benchmark("benchmarks/Test_L3_R1.txt", negamax, false); // End game - Easy
+    println!("(ArrayBoard) NEGAMAX - NAIVE");
+    benchmark("benchmarks/Test_L3_R1.txt", ArrayBoard::from_notation, negamax, false); // End game - Easy
 
     println!("==============================");
 
-    println!("NEGAMAX - ALPHA-BETA PRUNING");
-    benchmark("benchmarks/Test_L3_R1.txt", negamax_ab, false); // End game - Easy
-    println!("----------------");
+    println!("(ArrayBoard) NEGAMAX - ALPHA-BETA PRUNING");
+    benchmark("benchmarks/Test_L3_R1.txt", ArrayBoard::from_notation, negamax_ab, false); // End game - Easy
+    //println!("----------------");
     // Can solve much quicker but still takes a long time
     //benchmark("benchmarks/Test_L2_R1.txt", negamax_ab, true); // Mid game - Easy
 

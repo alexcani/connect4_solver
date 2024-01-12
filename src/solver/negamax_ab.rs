@@ -34,8 +34,7 @@ const fn generate_move_order() -> [Column; WIDTH] {
     order
 }
 
-// Naive implementation of negamax without any optimizations
-pub fn solve(position: &Board, nodes_searched: &mut usize, alpha: i32, beta: i32) -> i32 {
+pub fn solve(position: &impl Board, nodes_searched: &mut usize, alpha: i32, beta: i32) -> i32 {
     *nodes_searched += 1;
 
     // Stop conditions

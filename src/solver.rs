@@ -12,7 +12,7 @@ pub struct SolveResult {
 
 /// Solves a position by using the negamax variant of the minmax algorithm,
 /// returning the position's score for the current player and the number of searched nodes.
-pub fn negamax(position: &Board) -> SolveResult {
+pub fn negamax(position: &impl Board) -> SolveResult {
     let mut nodes_searched = 0;
     let score = negamax::solve(position, &mut nodes_searched);
     SolveResult { score, nodes_searched }
@@ -20,7 +20,7 @@ pub fn negamax(position: &Board) -> SolveResult {
 
 /// Solves a position by using the negamax variant of the minmax algorithm with alpha-beta pruning,
 /// returning the position's score for the current player and the number of searched nodes.
-pub fn negamax_ab(position: &Board) -> SolveResult {
+pub fn negamax_ab(position: &impl Board) -> SolveResult {
     let mut nodes_searched = 0;
     let ab = (WIDTH*HEIGHT) as i32;
     let score = negamax_ab::solve(position, &mut nodes_searched, -ab, ab);
