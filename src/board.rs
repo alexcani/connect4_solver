@@ -1,6 +1,6 @@
 use std::fmt::Display;
 
-use strum_macros::EnumIter;
+use strum_macros::{EnumIter, FromRepr, EnumCount};
 
 pub const WIDTH: usize = 7;
 pub const HEIGHT: usize = 6;
@@ -12,7 +12,7 @@ pub enum Slot {
     P2
 }
 
-#[derive(Copy, Clone, PartialEq, Debug, EnumIter)]
+#[derive(Copy, Clone, PartialEq, Debug, EnumIter, FromRepr, EnumCount)]
 pub enum Column {
     A = 0,
     B,

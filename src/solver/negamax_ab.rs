@@ -1,6 +1,38 @@
 use crate::solver::score;
 use crate::board::*;
-use strum::IntoEnumIterator;
+use strum::{IntoEnumIterator, EnumCount};
+
+// Generate move order based on constant WIDTH instead of hardcoding it
+const COLUMN_ORDER: [Column; WIDTH] = generate_move_order();
+const fn unwrap_col(c: Option<Column>) -> Column {
+    match c {
+        Some(c) => c,
+        None => panic!("Invalid column"),
+    }
+}
+const fn generate_move_order() -> [Column; WIDTH] {
+    let mut order = [Column::A; WIDTH];
+    let mid = Column::COUNT / 2;
+    let mut inc = 1;
+    let mut index = 1;
+    order[0] = unwrap_col(Column::from_repr(mid));
+    loop {
+        order[index] = unwrap_col(Column::from_repr(mid - inc));
+        if mid + inc < Column::COUNT {
+            order[index+1] = unwrap_col(Column::from_repr(mid + inc));
+        } else {
+            break;
+        }
+        if mid - inc == 0 {
+            break;
+        }
+
+        inc += 1;
+        index += 2;
+    }
+
+    order
+}
 
 // Naive implementation of negamax without any optimizations
 pub fn solve(position: &Board, nodes_searched: &mut usize, alpha: i32, beta: i32) -> i32 {
@@ -34,7 +66,7 @@ pub fn solve(position: &Board, nodes_searched: &mut usize, alpha: i32, beta: i32
     }
 
     let mut best = -((WIDTH*HEIGHT) as i32);
-    for column in Column::iter() {
+    for column in COLUMN_ORDER {
         if position.is_playable(column) {
             let mut next_position = *position;
             next_position.play(column);
