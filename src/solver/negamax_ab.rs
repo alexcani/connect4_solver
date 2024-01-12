@@ -3,7 +3,7 @@ use crate::board::*;
 use strum::IntoEnumIterator;
 
 // Naive implementation of negamax without any optimizations
-pub fn solve(position: &Board, nodes_searched: &mut usize) -> i32 {
+pub fn solve(position: &Board, nodes_searched: &mut usize, alpha: i32, beta: i32) -> i32 {
     *nodes_searched += 1;
 
     // Stop conditions
@@ -19,12 +19,30 @@ pub fn solve(position: &Board, nodes_searched: &mut usize) -> i32 {
         }
     };
 
+    // Alpha-beta pruning
+    let mut alpha = alpha;
+    let mut beta = beta;
+
+    // Maximum achievable score since position.number_of_moves() moves have been made so far
+    // This maximum score changes every turn, so we need to account of it in beta before iterating
+    let max = ((WIDTH*HEIGHT - 1) as u32 - position.number_of_moves()) as i32 / 2;
+    if beta > max {
+        beta = max;
+        if alpha >= beta {
+            return beta;
+        }
+    }
+
     let mut best = -((WIDTH*HEIGHT) as i32);
     for column in Column::iter() {
         if position.is_playable(column) {
             let mut next_position = *position;
             next_position.play(column);
-            best = best.max(-solve(&next_position, nodes_searched));
+            best = best.max(-solve(&next_position, nodes_searched, -beta, -alpha));
+            if best >= beta {  // our possible score is better than the worst score the opponent can make us get
+                return best;
+            }
+            alpha = alpha.max(best);
         }
     }
 
