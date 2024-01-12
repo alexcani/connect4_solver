@@ -1,4 +1,8 @@
-use strum_macros::{EnumIter, FromRepr, EnumCount};
+mod array_board;
+
+pub use array_board::ArrayBoard;
+
+use strum_macros::{EnumCount, EnumIter, FromRepr};
 
 pub const WIDTH: usize = 7;
 pub const HEIGHT: usize = 6;
@@ -11,7 +15,7 @@ pub enum Column {
     D,
     E,
     F,
-    G
+    G,
 }
 
 impl From<char> for Column {
@@ -24,13 +28,13 @@ impl From<char> for Column {
             '5' | 'E' | 'e' => Column::E,
             '6' | 'F' | 'f' => Column::F,
             '7' | 'G' | 'g' => Column::G,
-            _ => panic!("Invalid column")
+            _ => panic!("Invalid column"),
         }
     }
 }
 
 /// A Connect 4 board that can be played on or passed into a solver
-pub trait Board : Copy {
+pub trait Board: Copy {
     /// Checks if a given column is playable, i.e. if there is still space in the column
     fn is_playable(&self, column: Column) -> bool;
 
@@ -47,7 +51,3 @@ pub trait Board : Copy {
     /// Returns the number of moves made so far
     fn number_of_moves(&self) -> u32;
 }
-
-mod array_board;
-
-pub use array_board::ArrayBoard;
