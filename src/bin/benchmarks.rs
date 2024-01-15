@@ -90,4 +90,13 @@ fn main() {
     //benchmark("benchmarks/Test_L2_R1.txt", negamax_ab, true); // Mid game - Easy
 
     println!("==============================");
+
+    println!("(BitBoard) NEGAMAX - NAIVE");
+    benchmark("benchmarks/Test_L3_R1.txt", BitBoard::from_notation, negamax, false); // End game - Easy
+
+    println!("==============================");
+
+    println!("(BitBoard) NEGAMAX - ALPHA-BETA PRUNING");
+    benchmark("benchmarks/Test_L3_R1.txt", BitBoard::from_notation, negamax_ab, false); // End game - Easy
+    benchmark("benchmarks/Test_L2_R1.txt", BitBoard::from_notation, negamax_ab, false); // Mid game - Easy
 }
