@@ -15,6 +15,7 @@ pub struct BitBoard {
 sa::const_assert!(std::mem::size_of::<BitBoardField>() <= (HEIGHT + 1) * WIDTH);
 
 impl Board for BitBoard {
+    #[inline]
     fn is_playable(&self, column: Column) -> bool {
         self.mask & BitBoard::top_mask(column) == 0
     }
