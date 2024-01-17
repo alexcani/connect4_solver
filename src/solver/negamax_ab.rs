@@ -45,7 +45,7 @@ pub fn solve(position: &impl Board, nodes_searched: &mut usize, alpha: i32, beta
 
     // 2 - Win for current player
     for column in Column::iter() {
-        if position.is_winning(column) {
+        if position.is_playable(column) && position.is_winning(column) {
             return score(position.number_of_moves());
         }
     };
@@ -64,18 +64,17 @@ pub fn solve(position: &impl Board, nodes_searched: &mut usize, alpha: i32, beta
         }
     }
 
-    let mut best = -((WIDTH*HEIGHT) as i32);
     for column in COLUMN_ORDER {
         if position.is_playable(column) {
             let mut next_position = *position;
             next_position.play(column);
-            best = best.max(-solve(&next_position, nodes_searched, -beta, -alpha));
-            if best >= beta {  // our possible score is better than the worst score the opponent can make us get
-                return best;
+            let score = -solve(&next_position, nodes_searched, -beta, -alpha);
+            if score >= beta {  // our possible score is better than the worst score the opponent can make us get
+                return score;
             }
-            alpha = alpha.max(best);
+            alpha = alpha.max(score);
         }
     }
 
-    best
+    alpha
 }
