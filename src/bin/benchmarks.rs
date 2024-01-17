@@ -3,6 +3,8 @@
 use connect4_solver::prelude::*;
 use std::fs::File;
 use std::io::{BufRead, BufReader};
+use rayon::prelude::*;
+use rayon::iter::ParallelIterator;
 
 fn read_lines(filename: &str) -> Vec<String> {
     let file = File::open(filename).unwrap();
@@ -10,22 +12,38 @@ fn read_lines(filename: &str) -> Vec<String> {
     reader.lines().flatten().collect()
 }
 
+struct CaseResult {
+    correct: bool,
+    time_taken_ns: u128,
+    nodes_searched: usize,
+}
+
+fn format_time_ns(ns: u128) -> String {
+    let ns = ns as f32;
+    if ns < 1_000.0 {
+        format!("{}ns", ns)
+    } else if ns < 1_000_000.0 {
+        format!("{:.2}us", ns / 1_000.0)
+    } else if ns < 1_000_000_000.0 {
+        format!("{:.2}ms", ns / 1_000_000.0)
+    } else {
+        format!("{:.2}s", ns / 1_000_000_000.0)
+    }
+}
+
 // Run a benchmark with input from a file. Each line in a file contains the sequence of moves
 // and the expected score the engine should evaluate to
 // Outputs the average time taken to solve position, avg number of nodes searched, and avg node search rate.
 fn benchmark<C, S, B>(file: &str, board_creator: C, solver: S, per_case_output: bool)
 where
-    C: Fn(&str) -> B,
+    C: Fn(&str) -> B + Sync,
     B: Board,
-    S: Fn(&B) -> SolveResult,
+    S: Fn(&B) -> SolveResult + Sync,
 {
     println!("Running benchmark: {}", file);
-    let mut times = Vec::new();
-    let mut nodes_searched = Vec::new();
+    let now = std::time::Instant::now();
     let lines = read_lines(file);
-    let mut n_correct = 0;
-
-    for line in lines {
+    let results = lines.par_iter().enumerate().map(|(index, line)| {
         let mut splits = line.split(' ');
         let moves = splits.next().unwrap();
         let expected_score = splits.next().unwrap().parse::<i32>().unwrap();
@@ -33,18 +51,19 @@ where
 
         let now = std::time::Instant::now();
         let result = solver(&board);
-        let elapsed = now.elapsed().as_micros();
-        times.push(elapsed);
-        nodes_searched.push(result.nodes_searched);
-        if result.score == expected_score {
-            n_correct += 1;
-        }
+        let elapsed = now.elapsed().as_nanos();
+
+        let result = CaseResult {
+            correct: result.score == expected_score,
+            time_taken_ns: elapsed,
+            nodes_searched: result.nodes_searched,
+        };
 
         if per_case_output {
             println!(
                 "Game #{}: {} - {}us - {} nodes - {} Kpos/s",
-                times.len(),
-                if result.score == expected_score {
+                index,
+                if result.correct {
                     "PASSED"
                 } else {
                     "FAILED"
@@ -54,49 +73,56 @@ where
                 result.nodes_searched as f32 / elapsed as f32 * 1_000.0
             );
         }
-    }
+
+        result
+    }).collect::<Vec<_>>();
+    let elapsed = now.elapsed().as_nanos();
 
     println!("Benchmark result: {}", file);
-    println!("Number of entries: {}", times.len());
+    println!("Time taken: {}", format_time_ns(elapsed));
+    println!("Number of entries: {}", results.len());
     println!(
         "Number of correct scores: {} ({:.2}%)",
-        n_correct,
-        n_correct as f32 / times.len() as f32 * 100.0
+        results.iter().filter(|r| r.correct).count(),
+        results.iter().filter(|r| r.correct).count() as f32 / results.len() as f32 * 100.0
     );
     println!(
-        "Average time taken: {}μs",
-        times.iter().sum::<u128>() as f32 / times.len() as f32
+        "Average time taken: {}",
+        format_time_ns(results.iter().map(|r| r.time_taken_ns).sum::<u128>() / results.len() as u128)
     );
     println!(
         "Average nodes searched: {}",
-        nodes_searched.iter().sum::<usize>() as f32 / nodes_searched.len() as f32
+        results.iter().map(|r| r.nodes_searched).sum::<usize>() as f32 / results.len() as f32
     );
     println!(
         "Average nodes searched per second: {} Kpos/s",
-        nodes_searched.iter().sum::<usize>() as f32 / times.iter().sum::<u128>() as f32 * 1_000.0
+        results.iter().map(|r| r.nodes_searched).sum::<usize>() as f32 / results.iter().map(|r| r.time_taken_ns).sum::<u128>() as f32 * 1_000_000.0
     );
 }
 
 fn main() {
-    println!("(ArrayBoard) NEGAMAX - NAIVE");
+    /*println!("(ArrayBoard) NEGAMAX - NAIVE");
     benchmark("benchmarks/Test_L3_R1.txt", ArrayBoard::from_notation, negamax, false); // End game - Easy
 
     println!("==============================");
 
     println!("(ArrayBoard) NEGAMAX - ALPHA-BETA PRUNING");
-    benchmark("benchmarks/Test_L3_R1.txt", ArrayBoard::from_notation, negamax_ab, false); // End game - Easy
+    benchmark("benchmarks/Test_L3_R1.txt", ArrayBoard::from_notation, negamax_ab, false); // End game - Easy*/
     //println!("----------------");
     // Can solve much quicker but still takes a long time
     //benchmark("benchmarks/Test_L2_R1.txt", negamax_ab, true); // Mid game - Easy
 
-    println!("==============================");
+    /*println!("==============================");
 
     println!("(BitBoard) NEGAMAX - NAIVE");
     benchmark("benchmarks/Test_L3_R1.txt", BitBoard::from_notation, negamax, false); // End game - Easy
 
-    println!("==============================");
+    println!("==============================");*/
 
     println!("(BitBoard) NEGAMAX - ALPHA-BETA PRUNING");
-    benchmark("benchmarks/Test_L3_R1.txt", BitBoard::from_notation, negamax_ab, false); // End game - Easy
+    //benchmark("benchmarks/Test_L3_R1.txt", BitBoard::from_notation, negamax_ab, false); // End game - Easy
+    println!("----------------");
     benchmark("benchmarks/Test_L2_R1.txt", BitBoard::from_notation, negamax_ab, false); // Mid game - Easy
+    /*println!("----------------");
+    benchmark("benchmarks/Test_L2_R2.txt", BitBoard::from_notation, negamax_ab, false); // Mid game - Medium*/
 }
