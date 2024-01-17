@@ -8,25 +8,21 @@ type BitBoardField = u64;
 #[derive(Copy, Clone, Debug, Default)]
 pub struct BitBoard {
     n_moves: usize,
-    // height stores the bit index of the first empty slot in each column, not the number of pieces
-    height: [usize; WIDTH],
-    pos: [BitBoardField; 2],
+    pos: BitBoardField,  // stores the positions of the pieces of the current player
+    mask: BitBoardField,  // marks all non-empty cells
 }
 
 sa::const_assert!(std::mem::size_of::<BitBoardField>() <= (HEIGHT + 1) * WIDTH);
 
 impl Board for BitBoard {
     fn is_playable(&self, column: Column) -> bool {
-        let top = 1 << (HEIGHT - 1) << (column as usize * (HEIGHT + 1));
-        (self.pos[0] | self.pos[1]) & top == 0
+        self.mask & BitBoard::top_mask(column) == 0
     }
 
     fn is_winning(&self, column: Column) -> bool {
-        if !self.is_playable(column) {
-            return false;
-        }
-
-        let pos = self.pos[self.n_moves % 2] | 1 << self.height[column as usize];
+        // Play the stone in the position (mask + bottom mask), select only the column played (result is a single 1 bit somewhere).
+        // Then add it to the position of the current player
+        let pos = self.pos | ((self.mask + BitBoard::bottom_mask(column)) & BitBoard::column_mask(column));
 
         // Vertical
         let m = pos & (pos >> 1);
@@ -65,9 +61,9 @@ impl Board for BitBoard {
             return self.n_moves as u32;
         }
 
-        self.pos[self.n_moves % 2] |= 1 << self.height[column as usize];
+        self.pos ^= self.mask;  // switch player
+        self.mask |= self.mask + BitBoard::bottom_mask(column);  // play in the column
 
-        self.height[column as usize] += 1;
         self.n_moves += 1;
         self.n_moves as u32
     }
@@ -82,8 +78,8 @@ impl BitBoard {
 
         BitBoard {
             n_moves: 0,
-            height,
-            pos: [0; 2],
+            pos: 0,
+            mask: 0,
         }
     }
 
@@ -95,6 +91,21 @@ impl BitBoard {
         }
         board
     }
+
+    #[inline]
+    fn bottom_mask(column: Column) -> BitBoardField {
+        1 << (column as usize * (HEIGHT + 1))
+    }
+
+    #[inline]
+    fn column_mask(column: Column) -> BitBoardField {
+        ((1 << HEIGHT) - 1) << (column as usize * (HEIGHT + 1))
+    }
+
+    #[inline]
+    fn top_mask(column: Column) -> BitBoardField {
+        1 << (HEIGHT - 1) << (column as usize * (HEIGHT + 1))
+    }
 }
 
 impl Display for BitBoard {
@@ -103,10 +114,16 @@ impl Display for BitBoard {
         for row in (0..HEIGHT).rev() {
             for column in 0..WIDTH {
                 let pos = 1 << (row + column * (HEIGHT + 1));
-                if self.pos[0] & pos != 0 {
-                    s.push('X');
-                } else if self.pos[1] & pos != 0 {
-                    s.push('O');
+                let is_stone = self.mask & pos != 0;
+                let is_stone_current_player = self.pos & pos != 0;
+                let is_p1 = self.n_moves % 2 == 0;
+
+                if is_stone {
+                    if is_stone_current_player {
+                        s.push(if is_p1 { 'X' } else { 'O' });
+                    } else {
+                        s.push(if is_p1 { 'O' } else { 'X' });
+                    }
                 } else {
                     s.push('-');
                 }
@@ -137,7 +154,6 @@ mod tests {
     #[test]
     fn test_is_winning_horizontal() {
         let board = BitBoard::from_notation("435462");
-        println!("{}", board);
         assert!(board.is_winning(Column::G));
         Column::iter()
             .filter(|&c| c != Column::G)
@@ -147,7 +163,6 @@ mod tests {
     #[test]
     fn test_is_winning_vertical() {
         let board = BitBoard::from_notation("123451121517");
-        println!("{:?}", board);
         assert!(board.is_winning(Column::A));
         Column::iter()
             .skip(1)
