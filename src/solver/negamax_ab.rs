@@ -11,30 +11,21 @@ const fn unwrap_col(c: Option<Column>) -> Column {
     }
 }
 const fn generate_move_order() -> [Column; WIDTH] {
+    const MID: i32 = (Column::COUNT / 2) as i32;
     let mut order = [Column::A; WIDTH];
-    let mid = Column::COUNT / 2;
-    let mut inc = 1;
-    let mut index = 1;
-    order[0] = unwrap_col(Column::from_repr(mid));
+    let mut index: i32 = 0;
     loop {
-        order[index] = unwrap_col(Column::from_repr(mid - inc));
-        if mid + inc < Column::COUNT {
-            order[index+1] = unwrap_col(Column::from_repr(mid + inc));
-        } else {
+        order[index as usize] = unwrap_col(Column::from_repr((MID - ((1-2*(index%2))*(index+1)/2)) as usize));
+        index += 1;
+        if index >= WIDTH as i32 {
             break;
         }
-        if mid - inc == 0 {
-            break;
-        }
-
-        inc += 1;
-        index += 2;
     }
 
     order
 }
 
-pub fn solve(position: &impl Board, nodes_searched: &mut usize, alpha: i32, beta: i32) -> i32 {
+pub fn solve(position: &impl Board, nodes_searched: &mut usize, mut alpha: i32, mut beta: i32) -> i32 {
     *nodes_searched += 1;
 
     // Stop conditions
@@ -49,10 +40,6 @@ pub fn solve(position: &impl Board, nodes_searched: &mut usize, alpha: i32, beta
             return score(position.number_of_moves());
         }
     };
-
-    // Alpha-beta pruning
-    let mut alpha = alpha;
-    let mut beta = beta;
 
     // Maximum achievable score since position.number_of_moves() moves have been made so far
     // This maximum score changes every turn, so we need to account of it in beta before iterating

@@ -22,7 +22,7 @@ pub fn negamax(position: &impl Board) -> SolveResult {
 /// returning the position's score for the current player and the number of searched nodes.
 pub fn negamax_ab(position: &impl Board) -> SolveResult {
     let mut nodes_searched = 0;
-    let ab = (WIDTH*HEIGHT) as i32;
+    let ab = (WIDTH*HEIGHT) as i32 / 2;
     let score = negamax_ab::solve(position, &mut nodes_searched, -ab, ab);
     SolveResult { score, nodes_searched }
 }
