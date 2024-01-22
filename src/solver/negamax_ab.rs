@@ -40,8 +40,7 @@ impl NegamaxSolver {
 
     pub fn new_with_table() -> Self {
         Self {
-            // 64MB table
-            table: Some(TranspositionTable::new(8388617)),
+            table: Some(TranspositionTable::default()),
         }
     }
 
@@ -90,7 +89,7 @@ impl NegamaxSolver {
             }
         }
 
-        if beta > max {
+        if beta > max {  // the lower bound of the position score is the best the opponent can do (new upper bound for us)
             beta = max;
             if alpha >= beta {
                 return alpha;
