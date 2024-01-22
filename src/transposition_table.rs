@@ -2,7 +2,6 @@ use static_assertions as sa;
 use modular_bitfield::prelude::*;
 
 #[bitfield]
-#[derive(Clone, Copy)]
 struct Entry {
     key: B56,
     score: u8,
@@ -21,14 +20,16 @@ pub struct TranspositionTable {
 
 impl TranspositionTable {
     pub fn new(size: usize) -> Self {
-        Self {
-            table: vec![Entry::from_bytes([0u8; 8]); size],
-        }
+        let mut i = Self {
+            table: Vec::with_capacity(size)
+        };
+        i.table.resize_with(size, Entry::new);
+        i
     }
 
     pub fn get(&self, key: u64) -> Option<u8> {
         let index = key as usize % self.table.len();
-        let entry = self.table[index];
+        let entry = &self.table[index];
         if entry.key() == key {
             Some(entry.score())
         } else {
