@@ -68,6 +68,16 @@ impl Board for BitBoard {
         self.n_moves += 1;
         self.n_moves as u32
     }
+
+    #[inline]
+    fn has_key(&self) -> bool {
+        true
+    }
+
+    #[inline]
+    fn key(&self) -> u64 {
+        self.pos + self.mask
+    }
 }
 
 impl BitBoard {

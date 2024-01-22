@@ -52,4 +52,15 @@ pub trait Board: Copy {
 
     /// Returns the number of moves made so far
     fn number_of_moves(&self) -> u32;
+
+    /// Returns if this given board implementation supports hashing and has a key
+    fn has_key(&self) -> bool {
+        false
+    }
+
+    /// Returns the key of the board if it exists, 0 otherwise.
+    /// This function should only be called if [Board::has_key()] returns true, since 0 is a valid key.
+    fn key(&self) -> u64 {
+        0
+    }
 }
