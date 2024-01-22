@@ -1,3 +1,4 @@
+//! This module contains functions and structs to solve a Connect 4 position.
 mod negamax;
 mod negamax_ab;
 

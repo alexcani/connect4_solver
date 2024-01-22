@@ -1,3 +1,5 @@
+//! This module contains the board trait and all board implementations
+
 mod array_board;
 mod bitboard;
 
