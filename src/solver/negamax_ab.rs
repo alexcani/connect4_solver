@@ -28,6 +28,7 @@ const fn generate_move_order() -> [Column; WIDTH] {
     order
 }
 
+#[derive(Default)]
 pub struct NegamaxSolver {
     table: Option<TranspositionTable>,
 }
@@ -39,8 +40,13 @@ impl NegamaxSolver {
 
     pub fn new_with_table() -> Self {
         Self {
+            // 64MB table
             table: Some(TranspositionTable::new(8388617)),
         }
+    }
+
+    pub fn new_with_custom_table(table: TranspositionTable) -> Self {
+        Self { table: Some(table) }
     }
 
     pub fn solve(&mut self, position: &impl Board) -> SolveResult {
