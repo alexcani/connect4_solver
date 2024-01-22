@@ -80,9 +80,10 @@ impl NegamaxSolver {
 
         // Maximum achievable score since position.number_of_moves() moves have been made so far
         // This maximum score changes every turn, so we need to account of it in beta before iterating
-        const MIN_SCORE: i32 = -((WIDTH * HEIGHT) as i32 / 2) + 3;
         let mut max = ((WIDTH * HEIGHT - 1) as u32 - position.number_of_moves()) as i32 / 2;
+
         // Check transposition table
+        const MIN_SCORE: i32 = -((WIDTH * HEIGHT) as i32 / 2) + 3;
         if position.has_key() && self.table.is_some() {
             if let Some(score) = self.table.as_ref().unwrap().get(position.key()) {
                 max = score as i32 + MIN_SCORE - 1;
@@ -92,7 +93,7 @@ impl NegamaxSolver {
         if beta > max {
             beta = max;
             if alpha >= beta {
-                return beta;
+                return alpha;
             }
         }
 
