@@ -20,12 +20,14 @@ pub fn negamax(position: &impl Board) -> SolveResult {
 
 /// Solves a position by using the negamax variant of the minmax algorithm with alpha-beta pruning,
 /// returning the position's score for the current player and the number of searched nodes.
+/// This function doesn't use a transposition table to cache previously computed positions.
+/// In order to use a transposition table, check [`NegamaxSolver::new_with_table`].
 pub fn negamax_ab(position: &impl Board) -> SolveResult {
-    let mut nodes_searched = 0;
-    let ab = (WIDTH*HEIGHT) as i32 / 2;
-    let score = negamax_ab::solve(position, &mut nodes_searched, -ab, ab);
-    SolveResult { score, nodes_searched }
+    let mut solver = negamax_ab::NegamaxSolver::new();
+    solver.solve(position)
 }
+
+pub use negamax_ab::NegamaxSolver;
 
 #[inline]
 fn score(n_moves: u32) -> i32 {

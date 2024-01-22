@@ -1,6 +1,7 @@
-use crate::solver::score;
 use crate::board::*;
-use strum::{IntoEnumIterator, EnumCount};
+use crate::solver::{score, SolveResult};
+use crate::transposition_table::TranspositionTable;
+use strum::{EnumCount, IntoEnumIterator};
 
 // Generate move order based on constant WIDTH instead of hardcoding it
 const COLUMN_ORDER: [Column; WIDTH] = generate_move_order();
@@ -15,7 +16,9 @@ const fn generate_move_order() -> [Column; WIDTH] {
     let mut order = [Column::A; WIDTH];
     let mut index: i32 = 0;
     loop {
-        order[index as usize] = unwrap_col(Column::from_repr((MID - ((1-2*(index%2))*(index+1)/2)) as usize));
+        order[index as usize] = unwrap_col(Column::from_repr(
+            (MID - ((1 - 2 * (index % 2)) * (index + 1) / 2)) as usize,
+        ));
         index += 1;
         if index >= WIDTH as i32 {
             break;
@@ -25,43 +28,91 @@ const fn generate_move_order() -> [Column; WIDTH] {
     order
 }
 
-pub fn solve(position: &impl Board, nodes_searched: &mut usize, mut alpha: i32, mut beta: i32) -> i32 {
-    *nodes_searched += 1;
+pub struct NegamaxSolver {
+    table: Option<TranspositionTable>,
+}
 
-    // Stop conditions
-    // 1 - Draw. All moves have been made without a win
-    if position.number_of_moves() == WIDTH as u32 * HEIGHT as u32 {
-        return 0;
+impl NegamaxSolver {
+    pub fn new() -> Self {
+        Self { table: None }
     }
 
-    // 2 - Win for current player
-    for column in Column::iter() {
-        if position.is_playable(column) && position.is_winning(column) {
-            return score(position.number_of_moves());
-        }
-    };
-
-    // Maximum achievable score since position.number_of_moves() moves have been made so far
-    // This maximum score changes every turn, so we need to account of it in beta before iterating
-    let max = ((WIDTH*HEIGHT - 1) as u32 - position.number_of_moves()) as i32 / 2;
-    if beta > max {
-        beta = max;
-        if alpha >= beta {
-            return beta;
+    pub fn new_with_table() -> Self {
+        Self {
+            table: Some(TranspositionTable::new(8388617)),
         }
     }
 
-    for column in COLUMN_ORDER {
-        if position.is_playable(column) {
-            let mut next_position = *position;
-            next_position.play(column);
-            let score = -solve(&next_position, nodes_searched, -beta, -alpha);
-            if score >= beta {  // our possible score is better than the worst score the opponent can make us get
-                return score;
+    pub fn solve(&mut self, position: &impl Board) -> SolveResult {
+        let mut nodes_searched = 0;
+        let ab = (WIDTH*HEIGHT) as i32 / 2;
+        let score = self.solve_impl(position, &mut nodes_searched, -ab, ab);
+        SolveResult { score, nodes_searched }
+    }
+
+    fn solve_impl(
+        &mut self,
+        position: &impl Board,
+        nodes_searched: &mut usize,
+        mut alpha: i32,
+        mut beta: i32,
+    ) -> i32 {
+        *nodes_searched += 1;
+
+        // Stop conditions
+        // 1 - Draw. All moves have been made without a win
+        if position.number_of_moves() == WIDTH as u32 * HEIGHT as u32 {
+            return 0;
+        }
+
+        // 2 - Win for current player
+        for column in Column::iter() {
+            if position.is_playable(column) && position.is_winning(column) {
+                return score(position.number_of_moves());
             }
-            alpha = alpha.max(score);
         }
-    }
 
-    alpha
+        // Maximum achievable score since position.number_of_moves() moves have been made so far
+        // This maximum score changes every turn, so we need to account of it in beta before iterating
+        const MIN_SCORE: i32 = -((WIDTH * HEIGHT) as i32 / 2) + 3;
+        let mut max = ((WIDTH * HEIGHT - 1) as u32 - position.number_of_moves()) as i32 / 2;
+        // Check transposition table
+        if position.has_key() && self.table.is_some() {
+            if let Some(score) = self.table.as_ref().unwrap().get(position.key()) {
+                max = score as i32 + MIN_SCORE - 1;
+            }
+        }
+
+        if beta > max {
+            beta = max;
+            if alpha >= beta {
+                return beta;
+            }
+        }
+
+        for column in COLUMN_ORDER {
+            if position.is_playable(column) {
+                let mut next_position = *position;
+                next_position.play(column);
+                let score = -self.solve_impl(
+                    &next_position,
+                    nodes_searched,
+                    -beta,
+                    -alpha,
+                );
+                if score >= beta {
+                    // our possible score is better than the worst score the opponent can make us get
+                    return score;
+                }
+                alpha = alpha.max(score);
+            }
+        }
+
+        if position.has_key() && self.table.is_some() {
+            self.table.as_mut()
+                .unwrap()
+                .set(position.key(), (alpha - MIN_SCORE + 1) as u8);
+        }
+        alpha
+    }
 }
