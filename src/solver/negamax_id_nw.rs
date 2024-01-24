@@ -34,6 +34,8 @@ impl NegamaxID {
                 mid = max/2;
             }
 
+            // Since the score is bounded by the number of moves, there's an implicit depth limit in the search that
+            // depends on beta.
             let SolveResult{score, nodes_searched} = self.solver.solve_ab(position, mid, mid + 1);
             if score > mid {
                 min = score;

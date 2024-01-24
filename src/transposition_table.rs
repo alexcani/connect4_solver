@@ -41,6 +41,10 @@ impl TranspositionTable {
         let index = key as usize % self.table.len();
         self.table[index] = Entry::new().with_key(key).with_score(score);
     }
+
+    pub fn clear(&mut self) {
+        self.table.resize_with(self.table.len(), Entry::new);
+    }
 }
 
 impl Default for TranspositionTable {
