@@ -55,6 +55,12 @@ impl NegamaxSolver {
         SolveResult { score, nodes_searched }
     }
 
+    pub fn solve_ab(&mut self, position: &impl Board, alpha: i32, beta: i32) -> SolveResult {
+        let mut nodes_searched = 0;
+        let score = self.solve_impl(position, &mut nodes_searched, alpha, beta);
+        SolveResult { score, nodes_searched }
+    }
+
     fn solve_impl(
         &mut self,
         position: &impl Board,

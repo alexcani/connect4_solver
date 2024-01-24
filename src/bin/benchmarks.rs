@@ -174,4 +174,37 @@ fn main() {
         |board| solver.solve(board),
         false,
     ); // Mid game - Medium
+
+    println!("==============================");
+
+    println!("(BitBoard) NEGAMAX - ITERATIVE DEEPENING WITH NULL WINDOW SEARCH");
+
+    let mut solver = NegamaxID::new();
+    benchmark(
+        "benchmarks/Test_L3_R1.txt",
+        BitBoard::from_notation,
+        |board| solver.solve(board),
+        false,
+    ); // End game - Easy
+    println!("----------------");
+    benchmark(
+        "benchmarks/Test_L2_R1.txt",
+        BitBoard::from_notation,
+        |board| solver.solve(board),
+        false,
+    ); // Mid game - Easy
+    println!("----------------");
+    benchmark(
+        "benchmarks/Test_L2_R2.txt",
+        BitBoard::from_notation,
+        |board| solver.solve(board),
+        false,
+    ); // Mid game - Medium
+    println!("----------------");
+    benchmark(
+        "benchmarks/Test_L1_R1.txt",
+        BitBoard::from_notation,
+        |board| solver.solve(board),
+        false,
+    ); // Early game - Easy
 }

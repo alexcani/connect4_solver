@@ -1,6 +1,7 @@
 //! This module contains functions and structs to solve a Connect 4 position.
 mod negamax;
 mod negamax_ab;
+mod negamax_id_nw;
 
 use crate::board::*;
 
@@ -29,6 +30,7 @@ pub fn negamax_ab(position: &impl Board) -> SolveResult {
 }
 
 pub use negamax_ab::NegamaxSolver;
+pub use negamax_id_nw::NegamaxID;
 
 #[inline]
 fn score(n_moves: u32) -> i32 {
