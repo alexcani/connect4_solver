@@ -22,6 +22,8 @@ impl NegamaxID {
     }
 
     pub fn solve(&mut self, position: &impl Board) -> SolveResult {
+        self.solver.clear_table();
+
         let mut min = -(WIDTH as i32*HEIGHT as i32 - position.number_of_moves() as i32) / 2;
         let mut max = (WIDTH as i32*HEIGHT as i32 + 1 - position.number_of_moves() as i32) / 2;
         let mut nodes = 0;
@@ -36,7 +38,7 @@ impl NegamaxID {
 
             // Since the score is bounded by the number of moves, there's an implicit depth limit in the search that
             // depends on beta.
-            let SolveResult{score, nodes_searched} = self.solver.solve_ab(position, mid, mid + 1);
+            let SolveResult{score, nodes_searched} = self.solver.solve_ab(position, mid, mid + 1, false);
             if score > mid {
                 min = score;
             } else {

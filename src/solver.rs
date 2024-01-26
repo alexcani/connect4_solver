@@ -26,7 +26,7 @@ pub fn negamax(position: &impl Board) -> SolveResult {
 /// In order to use a transposition table, check [`NegamaxSolver::new_with_table`].
 pub fn negamax_ab(position: &impl Board) -> SolveResult {
     let mut solver = negamax_ab::NegamaxSolver::new();
-    solver.solve(position)
+    solver.solve(position, true)
 }
 
 pub use negamax_ab::NegamaxSolver;

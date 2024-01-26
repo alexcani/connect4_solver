@@ -137,21 +137,21 @@ fn main() {
     benchmark(
         "benchmarks/Test_L3_R1.txt",
         BitBoard::from_notation,
-        |board| solver.solve(board),
+        |board| solver.solve(board, true),
         false,
     ); // End game - Easy
     println!("----------------");
     benchmark(
         "benchmarks/Test_L2_R1.txt",
         BitBoard::from_notation,
-        |board| solver.solve(board),
+        |board| solver.solve(board, true),
         false,
     ); // Mid game - Easy
     println!("----------------");
     benchmark(
         "benchmarks/Test_L2_R2.txt",
         BitBoard::from_notation,
-        |board| solver.solve(board),
+        |board| solver.solve(board, true),
         false,
     ); // Mid game - Medium
 

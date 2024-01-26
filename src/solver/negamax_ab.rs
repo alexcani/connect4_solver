@@ -48,9 +48,15 @@ impl NegamaxSolver {
         Self { table: Some(table) }
     }
 
-    pub fn solve(&mut self, position: &impl Board) -> SolveResult {
+    pub fn clear_table(&mut self) {
         if let Some(table) = self.table.as_mut() {
             table.clear();
+        }
+    }
+
+    pub fn solve(&mut self, position: &impl Board, clear_cache: bool) -> SolveResult {
+        if clear_cache {
+            self.clear_table();
         }
 
         let mut nodes_searched = 0;
@@ -59,9 +65,9 @@ impl NegamaxSolver {
         SolveResult { score, nodes_searched }
     }
 
-    pub fn solve_ab(&mut self, position: &impl Board, alpha: i32, beta: i32) -> SolveResult {
-        if let Some(table) = self.table.as_mut() {
-            table.clear();
+    pub fn solve_ab(&mut self, position: &impl Board, alpha: i32, beta: i32, clear_cache: bool) -> SolveResult {
+        if clear_cache {
+            self.clear_table();
         }
 
         let mut nodes_searched = 0;
