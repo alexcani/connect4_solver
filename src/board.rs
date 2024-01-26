@@ -51,16 +51,8 @@ pub trait Board: Copy {
     /// Returns the number of moves made so far
     fn number_of_moves(&self) -> u32;
 
-    /// Returns if this given board implementation supports hashing and has a key
-    fn has_key(&self) -> bool {
-        false
-    }
-
-    /// Returns the key of the board if it exists, 0 otherwise.
-    /// This function should only be called if [Board::has_key()] returns true, since 0 is a valid key.
-    fn key(&self) -> u64 {
-        0
-    }
+    /// Returns the unique key that represented the position.
+    fn key(&self) -> u64;
 }
 
 type BitBoardField = u64;
@@ -127,11 +119,6 @@ impl Board for BitBoard {
 
         self.n_moves += 1;
         self.n_moves as u32
-    }
-
-    #[inline]
-    fn has_key(&self) -> bool {
-        true
     }
 
     #[inline]

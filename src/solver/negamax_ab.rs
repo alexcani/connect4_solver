@@ -97,7 +97,7 @@ impl NegamaxSolver {
 
         // Check transposition table
         const MIN_SCORE: i32 = -((WIDTH * HEIGHT) as i32 / 2) + 3;
-        if position.has_key() && self.table.is_some() {
+        if self.table.is_some() {
             if let Some(score) = self.table.as_ref().unwrap().get(position.key()) {
                 max = score as i32 + MIN_SCORE - 1;
             }
@@ -128,7 +128,7 @@ impl NegamaxSolver {
             }
         }
 
-        if position.has_key() && self.table.is_some() {
+        if self.table.is_some() {
             self.table.as_mut()
                 .unwrap()
                 .set(position.key(), (alpha - MIN_SCORE + 1) as u8);
