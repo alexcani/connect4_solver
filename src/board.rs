@@ -1,9 +1,7 @@
 //! This module contains the board trait and all board implementations
 
-mod array_board;
 mod bitboard;
 
-pub use array_board::ArrayBoard;
 pub use bitboard::BitBoard;
 
 use strum_macros::{EnumCount, EnumIter, FromRepr};

@@ -103,26 +103,6 @@ where
 }
 
 fn main() {
-    println!("(ArrayBoard) NEGAMAX - NAIVE");
-    benchmark(
-        "benchmarks/Test_L3_R1.txt",
-        ArrayBoard::from_notation,
-        negamax,
-        false,
-    ); // End game - Easy
-
-    println!("==============================");
-
-    println!("(ArrayBoard) NEGAMAX - ALPHA-BETA PRUNING");
-    benchmark(
-        "benchmarks/Test_L3_R1.txt",
-        ArrayBoard::from_notation,
-        negamax_ab,
-        false,
-    ); // End game - Easy
-
-    println!("==============================");
-
     println!("(BitBoard) NEGAMAX - NAIVE");
     benchmark(
         "benchmarks/Test_L3_R1.txt",
