@@ -70,6 +70,13 @@ impl NegamaxSolver {
             self.clear_table();
         }
 
+        if position.can_win_in_one_move() {
+            return SolveResult {
+                score: score(position.number_of_moves()),
+                nodes_searched: 1,
+            };
+        }
+
         let mut nodes_searched = 0;
         let score = self.solve_impl(position, &mut nodes_searched, alpha, beta);
         SolveResult { score, nodes_searched }
@@ -84,16 +91,25 @@ impl NegamaxSolver {
     ) -> i32 {
         *nodes_searched += 1;
 
+        let possible_moves = position.possible_nonlosing_moves();
+
         // Stop conditions
-        // 1 - Draw. All moves have been made without a win
-        if position.number_of_moves() == WIDTH as u32 * HEIGHT as u32 {
+        // 1 - No possible non-losing moves -> opponent wins next turn
+        if possible_moves.is_empty() {
+            return -((WIDTH * HEIGHT) as i32 - position.number_of_moves() as i32) / 2;
+        }
+
+        // 2 - Draw. All moves have been made without a win (actually, prune a bit ealier since a win is no longer possible at this point)
+        if position.number_of_moves() >= (WIDTH as u32 * HEIGHT as u32) - 2 {
             return 0;
         }
 
-        // 2 - Win for current player
-        for column in Column::iter() {
-            if position.is_playable(column) && position.is_winning(column) {
-                return score(position.number_of_moves());
+        // Lower bound since opponent cannot win next move (possible moves are not empty)
+        let min = -((WIDTH * HEIGHT - 2) as i32 - position.number_of_moves() as i32) / 2;
+        if alpha < min {  // update alpha and possibly prune
+            alpha = min;
+            if alpha >= beta {
+                return alpha;
             }
         }
 
@@ -117,7 +133,7 @@ impl NegamaxSolver {
         }
 
         for column in COLUMN_ORDER {
-            if position.is_playable(column) {
+            if possible_moves.contains(&column) {
                 let mut next_position = *position;
                 next_position.play(column);
                 let score = -self.solve_impl(

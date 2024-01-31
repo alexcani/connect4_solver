@@ -1,6 +1,5 @@
 use crate::board::*;
-use crate::solver::SolveResult;
-use crate::solver::NegamaxSolver;
+use crate::solver::{score, NegamaxSolver, SolveResult};
 use crate::transposition_table::TranspositionTable;
 
 #[derive(Default)]
@@ -23,6 +22,13 @@ impl NegamaxID {
 
     pub fn solve(&mut self, position: &impl Board) -> SolveResult {
         self.solver.clear_table();
+
+        if position.can_win_in_one_move() {
+            return SolveResult {
+                score: score(position.number_of_moves()),
+                nodes_searched: 1,
+            };
+        }
 
         let mut min = -(WIDTH as i32*HEIGHT as i32 - position.number_of_moves() as i32) / 2;
         let mut max = (WIDTH as i32*HEIGHT as i32 + 1 - position.number_of_moves() as i32) / 2;
