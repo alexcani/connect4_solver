@@ -132,9 +132,9 @@ impl Board for BitBoard {
         }
 
         let mut moves = [false; WIDTH];
-        for (i, column) in Column::iter().enumerate() {
+        for column in Column::iter() {
             if possible & BitBoard::column_mask(column) != 0 {
-                moves[i] = true;
+                moves[column as usize] = true;
             }
         }
 
