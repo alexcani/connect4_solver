@@ -34,6 +34,33 @@ impl From<char> for Column {
     }
 }
 
+/// A scored move, containing the column and the score of the move.
+/// This struct is returned by the [Board::score_move()] method
+#[derive(Debug, Copy, Clone)]
+pub struct ScoredMove {
+    pub column: Column,
+    pub score: u32,
+}
+
+impl Eq for ScoredMove {}
+impl PartialEq for ScoredMove {
+    fn eq(&self, other: &Self) -> bool {
+        self.score == other.score && self.column == other.column
+    }
+}
+
+impl Ord for ScoredMove {
+    fn cmp(&self, other: &Self) -> std::cmp::Ordering {
+        self.score.cmp(&other.score)
+    }
+}
+
+impl PartialOrd for ScoredMove {
+    fn partial_cmp(&self, other: &Self) -> Option<std::cmp::Ordering> {
+        Some(self.cmp(other))
+    }
+}
+
 /// A Connect 4 board that can be played on or passed into a solver
 pub trait Board: Copy {
     /// Checks if a given column is playable, i.e. if there is still space in the column
@@ -62,6 +89,9 @@ pub trait Board: Copy {
 
     /// Returns whether the current player can win in the next move
     fn can_win_in_one_move(&self) -> bool;
+
+    /// Returns the score of a move. The higher the score, the better the move
+    fn score_move(&self, column: Column) -> ScoredMove;
 }
 
 // Implementation of a Bitboard
@@ -139,6 +169,16 @@ impl Board for BitBoard {
         }
 
         moves
+    }
+
+    // The score is the number of winning positions after the move
+    fn score_move(&self, column: Column) -> ScoredMove {
+        let move_bitmask = (self.mask + BitBoard::bottom_mask_col(column)) & BitBoard::column_mask(column);
+        let score = BitBoard::compute_winning_position(self.pos | move_bitmask, self.mask).count_ones();
+        ScoredMove {
+            column,
+            score,
+        }
     }
 }
 
@@ -279,6 +319,8 @@ impl Display for BitBoard {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    use std::collections::BinaryHeap;
     use strum::IntoEnumIterator;
 
     #[test]
@@ -362,5 +404,56 @@ mod tests {
         assert!(board.is_winning(Column::E));
         board.play(Column::A); // don't win yet
         assert_eq!(board.possible_nonlosing_moves(), [false, false, false, false, true, false, false]); // only E is possible otherwise p1 wins
+    }
+
+    #[test]
+    fn test_move_scoring() {
+        // A move with higher score is a move that creates possible wins by forming a connected 3 line
+        let board = BitBoard::from_notation("4655");
+
+        // Playing C will create a possible win in the next move, so it's score should be 1
+        assert_eq!(board.score_move(Column::C).score, 1);
+
+        let board = BitBoard::from_notation("465556677141");
+        // Playing C allows 2 wins in the next move (by playing eiter B or F)
+        // Additionally, playing F also allows 2 wins (in C or G, although G is not yet possible)
+        // or B allows 1 win in the next move by playing C
+        assert_eq!(board.score_move(Column::C).score, 2);
+        assert_eq!(board.score_move(Column::F).score, 2);
+        assert_eq!(board.score_move(Column::B).score, 1);
+    }
+
+    #[test]
+    fn move_sorting_with_heap() {
+        let mut heap = BinaryHeap::new();
+
+        // We want the insertion order preserved in case of moves with the same score (stable sort)
+        let move1 = ScoredMove {
+            column: Column::A,
+            score: 1,
+        };
+        let move2 = ScoredMove {
+            column: Column::B,
+            score: 2,
+        };
+        let move3 = ScoredMove {
+            column: Column::C,
+            score: 2,
+        };
+        let move4 = ScoredMove {
+            column: Column::D,
+            score: 1,
+        };
+
+        // expected sequence is B, C, A, D
+        heap.push(move1);
+        heap.push(move2);
+        heap.push(move3);
+        heap.push(move4);
+
+        assert_eq!(heap.pop(), Some(move2));
+        assert_eq!(heap.pop(), Some(move3));
+        assert_eq!(heap.pop(), Some(move1));
+        assert_eq!(heap.pop(), Some(move4));
     }
 }

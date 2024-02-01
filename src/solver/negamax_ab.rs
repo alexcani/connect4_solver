@@ -1,3 +1,5 @@
+use std::collections::BinaryHeap;
+
 use crate::board::*;
 use crate::solver::{score, SolveResult};
 use crate::transposition_table::TranspositionTable;
@@ -60,12 +62,21 @@ impl NegamaxSolver {
         }
 
         let mut nodes_searched = 0;
-        let ab = (WIDTH*HEIGHT) as i32 / 2;
+        let ab = (WIDTH * HEIGHT) as i32 / 2;
         let score = self.solve_impl(position, &mut nodes_searched, -ab, ab);
-        SolveResult { score, nodes_searched }
+        SolveResult {
+            score,
+            nodes_searched,
+        }
     }
 
-    pub fn solve_ab(&mut self, position: &impl Board, alpha: i32, beta: i32, clear_cache: bool) -> SolveResult {
+    pub fn solve_ab(
+        &mut self,
+        position: &impl Board,
+        alpha: i32,
+        beta: i32,
+        clear_cache: bool,
+    ) -> SolveResult {
         if clear_cache {
             self.clear_table();
         }
@@ -79,7 +90,10 @@ impl NegamaxSolver {
 
         let mut nodes_searched = 0;
         let score = self.solve_impl(position, &mut nodes_searched, alpha, beta);
-        SolveResult { score, nodes_searched }
+        SolveResult {
+            score,
+            nodes_searched,
+        }
     }
 
     fn solve_impl(
@@ -106,7 +120,8 @@ impl NegamaxSolver {
 
         // Lower bound since opponent cannot win next move (possible moves are not empty)
         let min = -((WIDTH * HEIGHT - 2) as i32 - position.number_of_moves() as i32) / 2;
-        if alpha < min {  // update alpha and possibly prune
+        if alpha < min {
+            // update alpha and possibly prune
             alpha = min;
             if alpha >= beta {
                 return alpha;
@@ -125,33 +140,36 @@ impl NegamaxSolver {
             }
         }
 
-        if beta > max {  // the lower bound of the position score is the best the opponent can do (new upper bound for us)
+        if beta > max {
+            // the lower bound of the position score is the best the opponent can do (new upper bound for us)
             beta = max;
             if alpha >= beta {
                 return alpha;
             }
         }
 
+        // Sort moves by priority, defaulting to priority in COLUMN_ORDER
+        let mut heap = BinaryHeap::with_capacity(possible_moves.len());
         for column in COLUMN_ORDER {
             if possible_moves[column as usize] {
-                let mut next_position = *position;
-                next_position.play(column);
-                let score = -self.solve_impl(
-                    &next_position,
-                    nodes_searched,
-                    -beta,
-                    -alpha,
-                );
-                if score >= beta {
-                    // our possible score is better than the worst score the opponent can make us get
-                    return score;
-                }
-                alpha = alpha.max(score);
+                heap.push(position.score_move(column));
             }
         }
 
+        while let Some(ScoredMove{column, ..}) = heap.pop() {
+            let mut next_position = *position;
+            next_position.play(column);
+            let score = -self.solve_impl(&next_position, nodes_searched, -beta, -alpha);
+            if score >= beta {
+                // our possible score is better than the worst score the opponent can make us get
+                return score;
+            }
+            alpha = alpha.max(score);
+        }
+
         if self.table.is_some() {
-            self.table.as_mut()
+            self.table
+                .as_mut()
                 .unwrap()
                 .set(position.key(), (alpha - MIN_SCORE + 1) as u8);
         }
