@@ -1,7 +1,7 @@
 use crate::board::*;
 use crate::solver::{score, SolveResult};
 use crate::transposition_table::TranspositionTable;
-use strum::{EnumCount, IntoEnumIterator};
+use strum::EnumCount;
 
 // Generate move order based on constant WIDTH instead of hardcoding it
 const COLUMN_ORDER: [Column; WIDTH] = generate_move_order();
@@ -133,7 +133,7 @@ impl NegamaxSolver {
         }
 
         for column in COLUMN_ORDER {
-            if possible_moves.contains(&column) {
+            if possible_moves[column as usize] {
                 let mut next_position = *position;
                 next_position.play(column);
                 let score = -self.solve_impl(

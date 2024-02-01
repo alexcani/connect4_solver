@@ -1,7 +1,7 @@
 //! This module contains the board trait and all board implementations
 
 use static_assertions as sa;
-use std::{fmt::Display, vec};
+use std::fmt::Display;
 use strum::IntoEnumIterator;
 use strum_macros::{EnumCount, EnumIter, FromRepr};
 
@@ -54,11 +54,11 @@ pub trait Board: Copy {
     /// Returns the unique key that represented the position.
     fn key(&self) -> u64;
 
-    /// Returns a list of the possible non-losing moves
+    /// Returns an array of the possible non-losing moves. A true value at index i means that column i can be played
     /// A move is non-losing if it doesn't result in an immediate win for the opponent
     /// Thing function should not be called if there is a move that immediately wins the game
     /// for the current player. To check that, use [Board::can_win_in_one_move()]
-    fn possible_nonlosing_moves(&self) -> Vec<Column>;
+    fn possible_nonlosing_moves(&self) -> [bool; WIDTH];
 
     /// Returns whether the current player can win in the next move
     fn can_win_in_one_move(&self) -> bool;
@@ -109,7 +109,7 @@ impl Board for BitBoard {
         self.possible_moves() & self.winning_position() != 0
     }
 
-    fn possible_nonlosing_moves(&self) -> Vec<Column> {
+    fn possible_nonlosing_moves(&self) -> [bool; WIDTH] {
         assert!(!self.can_win_in_one_move(),
         "Called possible_nonlosing_moves but there is a move that immediately wins the game for the current player");
 
@@ -119,7 +119,7 @@ impl Board for BitBoard {
         if forced_moves != 0 {
             if forced_moves & (forced_moves - 1) != 0 {
                 // more than one forced move, we can't do anything
-                return vec![];
+                return [false; WIDTH];
             }
 
             possible = forced_moves;
@@ -128,13 +128,13 @@ impl Board for BitBoard {
         // Don't play directly under an opponent's winning position as well
         possible &= !(opponent_win >> 1);
         if possible == 0 {
-            return vec![];
+            return [false; WIDTH];
         }
 
-        let mut moves = Vec::new();
-        for column in Column::iter() {
+        let mut moves = [false; WIDTH];
+        for (i, column) in Column::iter().enumerate() {
             if possible & BitBoard::column_mask(column) != 0 {
-                moves.push(column);
+                moves[i] = true;
             }
         }
 
@@ -349,22 +349,18 @@ mod tests {
     fn test_possible_nonlosing_moves() {
         let board = BitBoard::new();
         let moves = board.possible_nonlosing_moves();
-        assert_eq!(moves.len(), WIDTH); // all columns are possible
-        for c in Column::iter() {
-            assert!(moves.contains(&c));
-        }
+        assert_eq!(moves, [true; WIDTH]); // all columns are possible
 
         // Losing position
         let board = BitBoard::from_notation("4453623221115");
 
         // Player 2's turn, but player 1 can win in A or G. So there's nothing player 2 can do
-
-        assert!(board.possible_nonlosing_moves().is_empty());
+        assert_eq!(board.possible_nonlosing_moves(), [false; WIDTH]); // all columns are false
 
         // Player 1 can win in E
         let mut board = BitBoard::from_notation("2334465545");
         assert!(board.is_winning(Column::E));
         board.play(Column::A); // don't win yet
-        assert_eq!(board.possible_nonlosing_moves(), vec![Column::E]); // only E is possible otherwise p1 wins
+        assert_eq!(board.possible_nonlosing_moves(), [false, false, false, false, true, false, false]); // only E is possible otherwise p1 wins
     }
 }
