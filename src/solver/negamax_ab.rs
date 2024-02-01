@@ -109,7 +109,7 @@ impl NegamaxSolver {
 
         // Stop conditions
         // 1 - No possible non-losing moves -> opponent wins next turn
-        if possible_moves.is_empty() {
+        if possible_moves == [false; WIDTH] {
             return -((WIDTH * HEIGHT) as i32 - position.number_of_moves() as i32) / 2;
         }
 
