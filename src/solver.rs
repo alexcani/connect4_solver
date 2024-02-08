@@ -111,7 +111,7 @@ impl Solver {
 
         // Stop conditions
         // 1 - No possible non-losing moves -> opponent wins next turn
-        if possible_moves == [false; WIDTH] {
+        if possible_moves.is_none() {
             return -((WIDTH * HEIGHT) as i32 - position.number_of_moves() as i32) / 2;
         }
 
@@ -147,6 +147,8 @@ impl Solver {
                 return alpha;
             }
         }
+
+        let possible_moves = possible_moves.unwrap();
 
         // Sort moves by priority, defaulting to priority in COLUMN_ORDER
         let mut heap = BinaryHeap::with_capacity(possible_moves.len());

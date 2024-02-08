@@ -81,11 +81,12 @@ pub trait Board: Copy {
     /// Returns the unique key that represented the position.
     fn key(&self) -> u64;
 
-    /// Returns an array of the possible non-losing moves. A true value at index i means that column i can be played
+    /// Returns an array of the possible non-losing moves or None if there is no non-losing move.
+    /// A true value at index i means that column i can be played.
     /// A move is non-losing if it doesn't result in an immediate win for the opponent
     /// Thing function should not be called if there is a move that immediately wins the game
     /// for the current player. To check that, use [Board::can_win_in_one_move()]
-    fn possible_nonlosing_moves(&self) -> [bool; WIDTH];
+    fn possible_nonlosing_moves(&self) -> Option<[bool; WIDTH]>;
 
     /// Returns whether the current player can win in the next move
     fn can_win_in_one_move(&self) -> bool;
@@ -139,7 +140,7 @@ impl Board for BitBoard {
         self.possible_moves() & self.winning_position() != 0
     }
 
-    fn possible_nonlosing_moves(&self) -> [bool; WIDTH] {
+    fn possible_nonlosing_moves(&self) -> Option<[bool; WIDTH]> {
         assert!(!self.can_win_in_one_move(),
         "Called possible_nonlosing_moves but there is a move that immediately wins the game for the current player");
 
@@ -149,7 +150,7 @@ impl Board for BitBoard {
         if forced_moves != 0 {
             if forced_moves & (forced_moves - 1) != 0 {
                 // more than one forced move, we can't do anything
-                return [false; WIDTH];
+                return None;
             }
 
             possible = forced_moves;
@@ -158,7 +159,7 @@ impl Board for BitBoard {
         // Don't play directly under an opponent's winning position as well
         possible &= !(opponent_win >> 1);
         if possible == 0 {
-            return [false; WIDTH];
+            return None;
         }
 
         let mut moves = [false; WIDTH];
@@ -168,7 +169,7 @@ impl Board for BitBoard {
             }
         }
 
-        moves
+        Some(moves)
     }
 
     // The score is the number of winning positions after the move
