@@ -1,5 +1,4 @@
 //! This module contains functions and structs to solve a Connect 4 position.
-mod negamax;
 mod negamax_ab;
 mod negamax_id_nw;
 
@@ -10,14 +9,6 @@ use crate::board::*;
 pub struct SolveResult {
     pub score: i32,
     pub nodes_searched: usize,
-}
-
-/// Solves a position by using the negamax variant of the minmax algorithm,
-/// returning the position's score for the current player and the number of searched nodes.
-pub fn negamax(position: &impl Board) -> SolveResult {
-    let mut nodes_searched = 0;
-    let score = negamax::solve(position, &mut nodes_searched);
-    SolveResult { score, nodes_searched }
 }
 
 /// Solves a position by using the negamax variant of the minmax algorithm with alpha-beta pruning,

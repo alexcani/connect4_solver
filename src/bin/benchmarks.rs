@@ -103,16 +103,6 @@ where
 }
 
 fn main() {
-    println!("(BitBoard) NEGAMAX - NAIVE");
-    benchmark(
-        "benchmarks/Test_L3_R1.txt",
-        BitBoard::from_notation,
-        negamax,
-        false,
-    ); // End game - Easy
-
-    println!("==============================");
-
     println!("(BitBoard) NEGAMAX - ALPHA-BETA PRUNING");
     benchmark(
         "benchmarks/Test_L3_R1.txt",
