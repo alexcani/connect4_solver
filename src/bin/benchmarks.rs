@@ -32,13 +32,10 @@ fn format_time_ns(ns: u128) -> String {
 // Run a benchmark with input from a file. Each line in a file contains the sequence of moves
 // and the expected score the engine should evaluate to
 // Outputs the average time taken to solve position, avg number of nodes searched, and avg node search rate.
-fn benchmark<C, S, B>(file: &str, board_creator: C, mut solver: S, per_case_output: bool)
-where
-    C: Fn(&str) -> B + Sync,
-    B: Board,
-    S: FnMut(&B) -> SolveResult + Sync,
-{
-    println!("Running benchmark: {}", file);
+fn benchmark(file: &str, title: &str, per_case_output: bool) {
+    println!("Running benchmark: {file} | {title}");
+
+    let mut solver = Solver::new();
     let now = std::time::Instant::now();
     let lines = read_lines(file);
     let results = lines
@@ -48,10 +45,11 @@ where
             let mut splits = line.split(' ');
             let moves = splits.next().unwrap();
             let expected_score = splits.next().unwrap().parse::<i32>().unwrap();
-            let board = board_creator(moves);
+            let board = BitBoard::from_notation(moves);
 
+            solver.clear();
             let now = std::time::Instant::now();
-            let result = solver(&board);
+            let result = solver.solve(&board);
             let elapsed = now.elapsed().as_nanos();
 
             let result = CaseResult {
@@ -103,78 +101,11 @@ where
 }
 
 fn main() {
-    println!("(BitBoard) NEGAMAX - ALPHA-BETA PRUNING");
-    benchmark(
-        "benchmarks/Test_L3_R1.txt",
-        BitBoard::from_notation,
-        negamax_ab,
-        false,
-    ); // End game - Easy
+    benchmark("benchmarks/Test_L3_R1.txt", "End game - Easy", false);
     println!("----------------");
-    benchmark(
-        "benchmarks/Test_L2_R1.txt",
-        BitBoard::from_notation,
-        negamax_ab,
-        false,
-    ); // Mid game - Easy
-
-    println!("==============================");
-
-    // Use the same solver for all benchmarks since recreating the cache would defeat its purpose
-    let mut solver = NegamaxSolver::new_with_table();
-
-    println!("(BitBoard) NEGAMAX - ALPHA-BETA PRUNING - TRANSPOSITION TABLE");
-    benchmark(
-        "benchmarks/Test_L3_R1.txt",
-        BitBoard::from_notation,
-        |board| solver.solve(board, true),
-        false,
-    ); // End game - Easy
+    benchmark("benchmarks/Test_L2_R1.txt", "Mid game - Easy", false);
     println!("----------------");
-    benchmark(
-        "benchmarks/Test_L2_R1.txt",
-        BitBoard::from_notation,
-        |board| solver.solve(board, true),
-        false,
-    ); // Mid game - Easy
+    benchmark("benchmarks/Test_L2_R2.txt", "Mid game - Medium", false);
     println!("----------------");
-    benchmark(
-        "benchmarks/Test_L2_R2.txt",
-        BitBoard::from_notation,
-        |board| solver.solve(board, true),
-        false,
-    ); // Mid game - Medium
-
-    println!("==============================");
-
-    println!("(BitBoard) NEGAMAX - ITERATIVE DEEPENING WITH NULL WINDOW SEARCH");
-
-    let mut solver = NegamaxID::new();
-    benchmark(
-        "benchmarks/Test_L3_R1.txt",
-        BitBoard::from_notation,
-        |board| solver.solve(board),
-        false,
-    ); // End game - Easy
-    println!("----------------");
-    benchmark(
-        "benchmarks/Test_L2_R1.txt",
-        BitBoard::from_notation,
-        |board| solver.solve(board),
-        false,
-    ); // Mid game - Easy
-    println!("----------------");
-    benchmark(
-        "benchmarks/Test_L2_R2.txt",
-        BitBoard::from_notation,
-        |board| solver.solve(board),
-        false,
-    ); // Mid game - Medium
-    println!("----------------");
-    benchmark(
-        "benchmarks/Test_L1_R1.txt",
-        BitBoard::from_notation,
-        |board| solver.solve(board),
-        false,
-    ); // Early game - Easy
+    benchmark("benchmarks/Test_L1_R1.txt", "Early game - Easy", false);
 }
