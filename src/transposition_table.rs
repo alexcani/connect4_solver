@@ -1,13 +1,24 @@
-use static_assertions as sa;
-use modular_bitfield::prelude::*;
-
-#[bitfield]
+#[derive(Default)]
 struct Entry {
-    key: B56,
-    score: u8,
+    data: u64
 }
 
-sa::assert_eq_size!(Entry, u64);
+impl Entry {
+    const KEY_MASK: u64 = 0xFFFFFFFFFFFFFF;  // 56 bits
+    const SCORE_MASK: u64 = 0xFF00000000000000;  // 8 bits
+
+    fn new(key: u64, score: u8) -> Self {
+        Self { data: (key & Entry::KEY_MASK) | ((score as u64) << 56)}
+    }
+
+    fn key(&self) -> u64 {
+        self.data & Entry::KEY_MASK
+    }
+
+    fn score(&self) -> u8 {
+        ((self.data & Entry::SCORE_MASK) >> 56) as u8
+    }
+}
 
 /// A transposition table is a cache of previously computed positions.
 /// It is used to avoid recomputing the same position multiple times.
@@ -23,7 +34,7 @@ impl TranspositionTable {
         let mut i = Self {
             table: Vec::with_capacity(size)
         };
-        i.table.resize_with(size, Entry::new);
+        i.clear();
         i
     }
 
@@ -39,11 +50,11 @@ impl TranspositionTable {
 
     pub fn set(&mut self, key: u64, score: u8) {
         let index = key as usize % self.table.len();
-        self.table[index] = Entry::new().with_key(key).with_score(score);
+        self.table[index] = Entry::new(key, score);
     }
 
     pub fn clear(&mut self) {
-        self.table.resize_with(self.table.len(), Entry::new);
+        self.table.resize_with(self.table.capacity(), Default::default);
     }
 }
 
