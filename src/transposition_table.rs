@@ -1,66 +1,46 @@
-#[derive(Default)]
-struct Entry {
-    data: u64
-}
-
-impl Entry {
-    const KEY_MASK: u64 = 0xFFFFFFFFFFFFFF;  // 56 bits
-    const SCORE_MASK: u64 = 0xFF00000000000000;  // 8 bits
-
-    fn new(key: u64, score: u8) -> Self {
-        Self { data: (key & Entry::KEY_MASK) | ((score as u64) << 56)}
-    }
-
-    fn key(&self) -> u64 {
-        self.data & Entry::KEY_MASK
-    }
-
-    fn score(&self) -> u8 {
-        ((self.data & Entry::SCORE_MASK) >> 56) as u8
-    }
-}
-
 /// A transposition table is a cache of previously computed positions.
 /// It is used to avoid recomputing the same position multiple times.
 /// The table is indexed by a hash of the position, and stores the score of the position for the current player.
-/// To create a new table with the default size of 64MB, use [`TranspositionTable::default`], otherwise use [`TranspositionTable::new`] with
-/// the desired number of entries (each entry is 8 bytes long). Ideally the table size should be a prime number.
+/// The table has a fixed size of 2^23 entries, amounting to 40MB of memory.
 pub struct TranspositionTable {
-    table: Vec<Entry>,
+    keys: Box<[u32; Self::SIZE]>,
+    scores: Box<[u8; Self::SIZE]>,
 }
 
 impl TranspositionTable {
-    pub fn new(size: usize) -> Self {
-        let mut i = Self {
-            table: Vec::with_capacity(size)
-        };
-        i.clear();
-        i
+    const SIZE: usize = 8388617; // 1 << 23 + 9
+
+    pub fn new() -> Self {
+        Self {
+            keys: Box::new([0; Self::SIZE]),
+            scores: Box::new([0; Self::SIZE]),
+        }
     }
 
     pub fn get(&self, key: u64) -> Option<u8> {
-        let index = key as usize % self.table.len();
-        let entry = &self.table[index];
-        if entry.key() == key {
-            Some(entry.score())
+        let index = key as usize % Self::SIZE;
+        let entry = self.keys[index];
+        if entry == key as u32 {
+            Some(self.scores[index])
         } else {
             None
         }
     }
 
     pub fn set(&mut self, key: u64, score: u8) {
-        let index = key as usize % self.table.len();
-        self.table[index] = Entry::new(key, score);
+        let index = key as usize % Self::SIZE;
+        self.keys[index] = key as u32;
+        self.scores[index] = score;
     }
 
     pub fn clear(&mut self) {
-        self.table.resize_with(self.table.capacity(), Default::default);
+        self.keys.fill(0);
+        self.scores.fill(0);
     }
 }
 
 impl Default for TranspositionTable {
     fn default() -> Self {
-        // 8388617 is the closest prime number that will result in a 64MB table
-        Self::new(8388617)
+        Self::new()
     }
 }
