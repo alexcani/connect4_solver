@@ -36,21 +36,22 @@ pub struct SolveResult {
     pub nodes_searched: usize,
 }
 
-#[derive(Default)]
 pub struct Solver {
-    table: TranspositionTable,
+    table: TranspositionTable<23>,
+}
+
+impl Default for Solver {
+    fn default() -> Self {
+        Self::new()
+    }
 }
 
 // Public API
 impl Solver {
     pub fn new() -> Self {
         Self {
-            table: TranspositionTable::default(),
+            table: TranspositionTable::<23>::new(),
         }
-    }
-
-    pub fn new_with_table(table: TranspositionTable) -> Self {
-        Self { table }
     }
 
     pub fn clear(&mut self) {
