@@ -49,10 +49,6 @@ impl Solver {
         }
     }
 
-    pub fn new_with_table(table: TranspositionTable) -> Self {
-        Self { table }
-    }
-
     pub fn clear(&mut self) {
         self.table.clear();
     }
