@@ -382,19 +382,22 @@ mod tests {
     fn test_possible_nonlosing_moves() {
         let board = BitBoard::new();
         let moves = board.possible_nonlosing_moves();
-        assert_eq!(moves, Some([true; WIDTH])); // all columns are possible
+        assert!(Column::iter().all(|c| moves & BitBoard::column_mask(c) != 0)); // all columns are possible
 
         // Losing position
         let board = BitBoard::from_notation("4453623221115");
 
         // Player 2's turn, but player 1 can win in A or G. So there's nothing player 2 can do
-        assert_eq!(board.possible_nonlosing_moves(), None); // all columns are false
+        assert_eq!(board.possible_nonlosing_moves(), 0); // all columns are losing
 
         // Player 1 can win in E
         let mut board = BitBoard::from_notation("2334465545");
         assert!(board.is_winning(Column::E));
         board.play(Column::A); // don't win yet
-        assert_eq!(board.possible_nonlosing_moves(), Some([false, false, false, false, true, false, false])); // only E is possible otherwise p1 wins
+        assert!(board.possible_nonlosing_moves() & BitBoard::column_mask(Column::E) != 0); // only E is possible otherwise p1 wins
+        assert!(Column::iter()
+            .filter(|&c| c != Column::E)
+            .all(|c| board.possible_nonlosing_moves() & BitBoard::column_mask(c) == 0)); // other columns are losing
     }
 
     #[test]
