@@ -1,8 +1,8 @@
 //! This module contains functions and structs to solve a Connect 4 position.
 use crate::board::*;
 use crate::transposition_table::TranspositionTable;
-use strum::EnumCount;
 use std::collections::BinaryHeap;
+use strum::EnumCount;
 
 // Generate move order based on constant WIDTH instead of hardcoding it
 const COLUMN_ORDER: [Column; WIDTH] = generate_move_order();
@@ -117,7 +117,7 @@ impl Solver {
         }
 
         // Lower bound since opponent cannot win next move (possible moves are not empty)
-        let min = -((WIDTH * HEIGHT - 2) as i32 - position.number_of_moves() as i32) / 2;
+        let mut min = -((WIDTH * HEIGHT - 2) as i32 - position.number_of_moves() as i32) / 2;
         if alpha < min {
             // update alpha and possibly prune
             alpha = min;
@@ -129,11 +129,37 @@ impl Solver {
         // Maximum achievable score since position.number_of_moves() moves have been made so far
         // This maximum score changes every turn, so we need to account of it in beta before iterating
         let mut max = ((WIDTH * HEIGHT - 1) as u32 - position.number_of_moves()) as i32 / 2;
+        if beta > max {
+            beta = max;
+            if alpha >= beta {
+                return beta;
+            }
+        }
 
         // Check transposition table
         const MIN_SCORE: i32 = -((WIDTH * HEIGHT) as i32 / 2) + 3;
-        if let Some(score) = self.table.get(position.key()) {
-            max = score as i32 + MIN_SCORE - 1;
+        const MAX_SCORE: i32 = ((WIDTH * HEIGHT + 1) as i32 / 2) - 3;
+        let key = position.key();
+        if let Some(score) = self.table.get(key) {
+            if score > (MAX_SCORE - MIN_SCORE + 1) as u8 {
+                // score is a lower bound
+                min = score as i32 - MAX_SCORE + 2 * MIN_SCORE - 2;
+                if alpha < min {
+                    alpha = min;
+                    if alpha >= beta {
+                        return alpha;
+                    }
+                }
+            } else {
+                // score is an upper bound
+                max = score as i32 + MIN_SCORE - 1;
+                if beta > max {
+                    beta = max;
+                    if alpha >= beta {
+                        return beta;
+                    }
+                }
+            }
         }
 
         if beta > max {
@@ -159,14 +185,16 @@ impl Solver {
             next_position.play(column);
             let score = -self.solve_impl(&next_position, nodes_searched, -beta, -alpha);
             if score >= beta {
+                // Save the lower bound of the position score
+                self.table
+                    .set(key, (score + MAX_SCORE - 2 * MIN_SCORE + 2) as u8);
                 // our possible score is better than the worst score the opponent can make us get
                 return score;
             }
             alpha = alpha.max(score);
         }
 
-        self.table
-            .set(position.key(), (alpha - MIN_SCORE + 1) as u8);
+        self.table.set(key, (alpha - MIN_SCORE + 1) as u8); // save the upper bound of the position score
 
         alpha
     }
