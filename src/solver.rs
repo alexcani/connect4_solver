@@ -107,7 +107,7 @@ impl Solver {
 
         // Stop conditions
         // 1 - No possible non-losing moves -> opponent wins next turn
-        if possible_moves.is_none() {
+        if possible_moves == 0 {
             return -((WIDTH * HEIGHT) as i32 - position.number_of_moves() as i32) / 2;
         }
 
@@ -170,12 +170,10 @@ impl Solver {
             }
         }
 
-        let possible_moves: [bool; WIDTH] = possible_moves.unwrap();
-
         // Sort moves by priority, defaulting to priority in COLUMN_ORDER
         let mut heap: BinaryHeap<_, Max, WIDTH> = BinaryHeap::new();
         for column in COLUMN_ORDER {
-            if possible_moves[column as usize] {
+            if possible_moves & BitBoard::column_mask(column) != 0 {
                 heap.push(position.score_move(column)).unwrap();
             }
         }

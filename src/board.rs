@@ -2,7 +2,6 @@
 
 use static_assertions as sa;
 use std::fmt::Display;
-use strum::IntoEnumIterator;
 use strum_macros::{EnumCount, EnumIter, FromRepr};
 
 pub const WIDTH: usize = 7;
@@ -61,6 +60,8 @@ impl PartialOrd for ScoredMove {
     }
 }
 
+pub type BitBoardField = u64;
+
 /// A Connect 4 board that can be played on or passed into a solver
 pub trait Board: Copy {
     /// Checks if a given column is playable, i.e. if there is still space in the column
@@ -81,12 +82,12 @@ pub trait Board: Copy {
     /// Returns the unique key that represented the position.
     fn key(&self) -> u64;
 
-    /// Returns an array of the possible non-losing moves or None if there is no non-losing move.
-    /// A true value at index i means that column i can be played.
+    /// Returns a board representation containing the possible non-losing moves.
+    /// A value of 0 means there are no possible non-losing moves.
     /// A move is non-losing if it doesn't result in an immediate win for the opponent
     /// Thing function should not be called if there is a move that immediately wins the game
     /// for the current player. To check that, use [Board::can_win_in_one_move()]
-    fn possible_nonlosing_moves(&self) -> Option<[bool; WIDTH]>;
+    fn possible_nonlosing_moves(&self) -> BitBoardField;
 
     /// Returns whether the current player can win in the next move
     fn can_win_in_one_move(&self) -> bool;
@@ -96,8 +97,6 @@ pub trait Board: Copy {
 }
 
 // Implementation of a Bitboard
-
-type BitBoardField = u64;
 
 #[derive(Copy, Clone, Debug, Default)]
 pub struct BitBoard {
@@ -114,6 +113,7 @@ impl Board for BitBoard {
         self.mask & BitBoard::top_mask_col(column) == 0
     }
 
+    #[inline]
     fn is_winning(&self, column: Column) -> bool {
         self.possible_moves() & self.winning_position() & BitBoard::column_mask(column) != 0
     }
@@ -123,6 +123,7 @@ impl Board for BitBoard {
         self.n_moves as u32
     }
 
+    #[inline]
     fn play(&mut self, column: Column) -> u32 {
         self.pos ^= self.mask; // switch player
         self.mask |= self.mask + BitBoard::bottom_mask_col(column); // play in the column
@@ -136,11 +137,12 @@ impl Board for BitBoard {
         self.pos + self.mask
     }
 
+    #[inline]
     fn can_win_in_one_move(&self) -> bool {
         self.possible_moves() & self.winning_position() != 0
     }
 
-    fn possible_nonlosing_moves(&self) -> Option<[bool; WIDTH]> {
+    fn possible_nonlosing_moves(&self) -> BitBoardField {
         assert!(!self.can_win_in_one_move(),
         "Called possible_nonlosing_moves but there is a move that immediately wins the game for the current player");
 
@@ -150,26 +152,14 @@ impl Board for BitBoard {
         if forced_moves != 0 {
             if forced_moves & (forced_moves - 1) != 0 {
                 // more than one forced move, we can't do anything
-                return None;
+                return 0;
             }
 
             possible = forced_moves;
         }
 
         // Don't play directly under an opponent's winning position as well
-        possible &= !(opponent_win >> 1);
-        if possible == 0 {
-            return None;
-        }
-
-        let mut moves = [false; WIDTH];
-        for column in Column::iter() {
-            if possible & BitBoard::column_mask(column) != 0 {
-                moves[column as usize] = true;
-            }
-        }
-
-        Some(moves)
+        possible & !(opponent_win >> 1)
     }
 
     // The score is the number of winning positions after the move
@@ -217,7 +207,7 @@ impl BitBoard {
     }
 
     #[inline]
-    fn column_mask(column: Column) -> BitBoardField {
+    pub fn column_mask(column: Column) -> BitBoardField {
         ((1 << HEIGHT) - 1) << (column as usize * (HEIGHT + 1))
     }
 
