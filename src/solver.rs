@@ -1,7 +1,7 @@
 //! This module contains functions and structs to solve a Connect 4 position.
 use crate::board::*;
 use crate::transposition_table::TranspositionTable;
-use std::collections::BinaryHeap;
+use heapless::binary_heap::{BinaryHeap, Max};
 use strum::EnumCount;
 
 // Generate move order based on constant WIDTH instead of hardcoding it
@@ -170,13 +170,13 @@ impl Solver {
             }
         }
 
-        let possible_moves = possible_moves.unwrap();
+        let possible_moves: [bool; WIDTH] = possible_moves.unwrap();
 
         // Sort moves by priority, defaulting to priority in COLUMN_ORDER
-        let mut heap = BinaryHeap::with_capacity(possible_moves.len());
+        let mut heap: BinaryHeap<_, Max, WIDTH> = BinaryHeap::new();
         for column in COLUMN_ORDER {
             if possible_moves[column as usize] {
-                heap.push(position.score_move(column));
+                heap.push(position.score_move(column)).unwrap();
             }
         }
 

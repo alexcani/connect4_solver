@@ -108,4 +108,8 @@ fn main() {
     benchmark("benchmarks/Test_L2_R2.txt", "Mid game - Medium", false);
     println!("----------------");
     benchmark("benchmarks/Test_L1_R1.txt", "Early game - Easy", false);
+    println!("----------------");
+    benchmark("benchmarks/Test_L1_R2.txt", "Early game - Medium", false);
+    println!("----------------");
+    benchmark("benchmarks/Test_L1_R3.txt", "Early game - Medium", true);
 }
